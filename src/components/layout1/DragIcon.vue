@@ -2,11 +2,11 @@
     <div
         class="h-1 w-8 bg-neutral-800/50 mx-auto rounded-xl"
         :class="{
-            'bg-neutral-800/50': show,
-            'bg-neutral-800/0': !show
+            'h-1': show,
+            'h-0': !show
         }"
         :style="{
-            transition: 'background-color 0.5s ease 0s',
+            transition: 'height 0.2s ease 0s',
         }"
     ></div>
 </template>

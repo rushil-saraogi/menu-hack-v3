@@ -20,6 +20,11 @@ export default {
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins&family=Source+Sans+Pro:wght@400;600;700&display=swap');
 
+html,
+body {
+    overscroll-behavior-y: contain;
+}
+
 #app {
   font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

@@ -11,7 +11,7 @@
         <img  class="m-auto" />
         <div class="flex justify-between items-center mt-3">
             <div class="flex flex-col items-start">
-                <div class="font-bold text-lg">{{ item.name }}</div>
+                <div class="font-bold text-md">{{ item.name }}</div>
                 <div>{{ item.price.high_formatted }}</div>
             </div>
             <div>
@@ -22,7 +22,7 @@
 </template>
 
 <script>
-import { PlusCircleIcon } from "@heroicons/vue/outline";
+import { PlusCircleIcon } from "@heroicons/vue/solid";
 
 export default {
     name: "MenuItem",

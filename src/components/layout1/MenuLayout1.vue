@@ -2,14 +2,14 @@
     <div class="text-center flex flex-col relative">
         <!-- Cart -->
         <div
-            class="p-4 border border-zinc-300 fixed bg-white left-0 w-full z-20"
+            class="px-4 py-3 border border-zinc-300 fixed bg-white left-0 w-full z-20"
             :class="{
                 'rounded-b-2xl': selected === NO_SELECTION,
                 'rounded-none': selected !== NO_SELECTION,
             }"
             ref="cart"
             :style="{
-                transition: '0.6s ease 0s',
+                transition: enableCartTransitions ? '0.6s ease 0s' : '',
                 transitionProperty: 'top, border-radius',
                 top: `${cartPosition}px`,
             }"
@@ -17,15 +17,15 @@
             <div class="grid gap-4">
                 <TransitionGroup
                     enter-active-class="duration-500 ease-out delay-200"
-                    enter-from-class="transform translate-x-full"
-                    enter-to-class="translate-x-0"
+                    enter-from-class="transform translate-x-full opacity-0"
+                    enter-to-class="translate-x-0 opacity-100"
                     leave-active-class="duration-300 ease-in"
-                    leave-from-class="translate-x-0"
-                    leave-to-class="transform translate-x-full"
+                    leave-from-class="translate-x-0 opacity-100"
+                    leave-to-class="transform translate-x-full opacity-0"
                 >
                     <CartItem
                         v-for="(item, index) in cart"
-                        :key="item.id"
+                        :key="index"
                         :item="item"
                         @click:delete="deleteItemFromCart(index)"
                     />
@@ -33,10 +33,10 @@
             </div>
 
             <div class="mt-3" v-show="!!cart.length">
-				<div class="flex justify-between font-semibold">
-					<div>Total</div>
-					<div>${{ cartTotal }}</div>
-				</div>
+                <div class="flex justify-between font-semibold">
+                    <div>Total</div>
+                    <div>${{ cartTotal }}</div>
+                </div>
 
                 <button
                     v-show="!!cart.length"
@@ -46,11 +46,15 @@
                 </button>
             </div>
 
-            <div @click="toggleCart">
+            <div
+				@touchstart="handleCartTouchStart"
+				@touchmove="handleCartTouchMove"
+				@touchend="handleCartTouchEnd"
+			>
                 <div class="flex justify-between items-center">
                     <ShoppingCartIcon class="h-5 w-5 text-zinc-600" />
                     <div
-                        class="ml-2 h-8 w-8 flex items-center justify-center bg-zinc-300 rounded-full font-bold"
+                        class="ml-2 h-8 w-8 flex items-center justify-center bg-zinc-200 rounded-full font-bold"
                         :class="{
                             jello: cartAnimationVisible,
                         }"
@@ -75,7 +79,7 @@
             <div
                 class="h-full w-full fixed bg-black/60 z-10"
                 v-show="!!cartVisible"
-                @click="toggleCart"
+                @click="toggleCart(false)"
             />
         </Transition>
 
@@ -93,16 +97,17 @@
                 v-for="(category, index) in categories"
                 ref="categories"
                 :key="category.id"
-                class="pt-4 fixed left-0 w-full flex flex-col"
+                class="fixed left-0 w-full flex flex-col"
                 :class="{
                     [backgroundClasses[index]]: true,
-                    'rounded-t-2xl': index !== selected,
+                    'rounded-t-2xl pt-0': index !== selected,
+					'pt-4': index === selected,
                 }"
                 :style="{
                     minHeight: `${viewportHeight}px`,
-                    top: `${calculateCategoryTop(index)}px`,
+                    top: `${categoryTopPositions[index]}px`,
                     bottom: '0px',
-                    transition: 'top 0.8s ease 0s',
+                    transition: enableCategoryTransitions ? 'top 0.4s ease 0s' : '',
                     transitionProperty: 'top, border-radius',
                 }"
             >
@@ -116,19 +121,23 @@
                         leave-to-class="transform opacity-0"
                     >
                         <DragIcon
-                            v-show="index === selected"
-                            @click="selectCategory(NO_SELECTION)"
+                            :show="index === selected"
+							@touchstart="(e) => handleCategoryTouchStart(e, index)"
+							@touchmove="handleCategoryTouchMove"
+							@touchend="handleCategoryTouchEnd"
                         />
                     </Transition>
                     <div
-                        class="text-lg font-semibold mt-4 poppins"
-                        @click="selectCategory(index)"
+                        class="text-md p-4 font-semibold poppins"
+                        @touchstart="(e) => handleCategoryTouchStart(e, index)"
+                        @touchmove="handleCategoryTouchMove"
+						@touchend="handleCategoryTouchEnd"
                     >
                         {{ category.name }}
                     </div>
                 </div>
 
-                <div class="mt-6 overflow-scroll">
+                <div class="overflow-scroll">
                     <MenuItem
                         v-for="item in getItems(category.site_category_id)"
                         :key="item.id"
@@ -144,6 +153,7 @@
 <script>
 import { nextTick } from "vue";
 import { ShoppingCartIcon } from "@heroicons/vue/solid";
+import { getTouches } from "../../util/touch";
 import categories from "../../data/categories.json";
 import menu from "../../data/menu.json";
 import MenuItem from "./MenuItem.vue";
@@ -151,8 +161,8 @@ import CartItem from "./CartItem.vue";
 import DragIcon from "./DragIcon.vue";
 
 const NO_SELECTION = 99999;
-const CATEGORY_HEIGHT = 80;
-const CART_HEIGHT = 70;
+const CATEGORY_HEIGHT = 56;
+const CART_HEIGHT = 60;
 
 const backgroundClasses = [
     "bg-orange-100",
@@ -184,14 +194,22 @@ export default {
             cartVisible: false,
             cart: [],
             cartPosition: 0,
+            categoryTopPositions: [],
             cartAnimationVisible: false,
             animationInterval: null,
+			enableCategoryTransitions: true,
+			enableCartTransitions: true,
+            categoryTouchSelected: NO_SELECTION,
+            categoryTouchStart: 0,
+            categoryTouchDrag: 0,
+            cartTouchStart: 0,
+            cartTouchDrag: 0,
         };
     },
 
     computed: {
         cartTotal() {
-			const num = this.cart.reduce((acc, item) => {
+            const num = this.cart.reduce((acc, item) => {
                 return acc + item.price.high;
             }, 0);
 
@@ -202,6 +220,7 @@ export default {
     created() {
         nextTick(() => {
             this.calcCartPosition();
+            this.calcCategoryTopPositions();
         });
     },
 
@@ -218,6 +237,42 @@ export default {
         cartAnimationVisible() {
             this.calcCartPosition();
         },
+
+        selected() {
+            this.calcCategoryTopPositions();
+        },
+
+        categoryTouchDrag(newVal) {
+            this.categoryTopPositions = this.categoryTopPositions.map(
+                (position, index) => {
+                    if (index === this.categoryTouchSelected) {
+						if (newVal < this.CART_HEIGHT) {
+							return this.CART_HEIGHT;
+						}
+
+						if (newVal > this.getCategoryMinPosition(index)) {
+							return this.getCategoryMinPosition(index);
+						}
+
+						return newVal;
+					}
+
+					return position;
+                }
+            );
+        },
+
+		cartTouchDrag(newVal) {
+			const cartHeight = this.$refs.cart.offsetHeight;
+			const relativePosition = newVal - cartHeight;
+
+			if (relativePosition > 0) {
+				this.cartPosition = 0;
+				return;
+			}
+
+			this.cartPosition = relativePosition;
+		}
     },
 
     methods: {
@@ -228,12 +283,12 @@ export default {
             );
         },
 
-        toggleCart() {
+        toggleCart(show = null) {
             if (this.cart.length === 0) {
                 return;
             }
 
-            this.cartVisible = !this.cartVisible;
+            this.cartVisible = show || !this.cartVisible;
             this.calcCartPosition();
         },
 
@@ -249,6 +304,68 @@ export default {
             this.cart.push(item);
             this.toggleCartAnimation();
         },
+
+        handleCategoryClick(index) {
+			// debugger; //eslint-disable-line
+            if (this.selected === index) {
+                this.selectCategory(NO_SELECTION);
+                return;
+            }
+
+            this.selectCategory(index);
+        },
+
+        handleCategoryTouchStart(evt, index) {
+            const firstTouch = getTouches(evt)[0];
+            this.categoryTouchStart = firstTouch.clientY;
+            this.categoryTouchSelected = index;
+			this.enableCategoryTransitions = false;
+        },
+
+        handleCategoryTouchMove(evt) {
+            if (!this.categoryTouchStart) {
+                return;
+            }
+
+            this.categoryTouchDrag = evt.touches[0].clientY;
+        },
+
+		handleCategoryTouchEnd() {
+			this.enableCategoryTransitions = true;
+
+			if (this.categoryTouchDrag < this.categoryTouchStart) {
+				this.selected = this.categoryTouchSelected;
+			} else {
+				this.selected = NO_SELECTION;
+			}
+
+			this.calcCategoryTopPositions();
+		},
+
+		handleCartTouchStart(evt) {
+            const firstTouch = getTouches(evt)[0];
+            this.cartTouchStart = firstTouch.clientY;
+			this.enableCartTransitions = false;
+        },
+
+        handleCartTouchMove(evt) {
+            if (!this.cartTouchStart) {
+                return;
+            }
+
+            this.cartTouchDrag = evt.touches[0].clientY;
+        },
+
+		handleCartTouchEnd() {
+			// debugger; // eslint-disable-line
+			this.enableCartTransitions = true;
+
+			if (this.cartTouchDrag > this.cartTouchStart) {
+				this.toggleCart(true);
+			} else {
+				this.toggleCart(false);
+			}
+		},
 
         deleteItemFromCart(index) {
             this.cart.splice(index, 1);
@@ -270,31 +387,41 @@ export default {
 
             const cartTotalHeight = this.$refs.cart.offsetHeight;
 
-			if (this.cartAnimationVisible) {
-				this.cartPosition = this.cart.length === 1
-					? this.cartPosition
-					: -(cartTotalHeight - CART_HEIGHT - 240);
-				return;
-			}
+            // When adding items to the cart bring it down 200px
+            if (this.cartAnimationVisible) {
+                this.cartPosition =
+                    this.cart.length === 1
+                        ? this.cartPosition
+                        : -(cartTotalHeight - CART_HEIGHT - 200);
+                return;
+            }
 
             this.cartPosition = -(cartTotalHeight - CART_HEIGHT);
             return;
         },
 
-        calculateCategoryTop(index) {
-            if (this.selected === NO_SELECTION) {
-                return (
-                    this.viewportHeight -
-                    CATEGORY_HEIGHT * this.categories.length +
-                    CATEGORY_HEIGHT * index
-                );
-            }
+        calcCategoryTopPositions() {
+            let newPositions = Array(this.categories.length).fill(0);
 
-            if (index === this.selected) {
-                return this.CART_HEIGHT;
-            }
+            this.categoryTopPositions = newPositions.map((_, index) => {
+                if (this.selected === NO_SELECTION) {
+					return this.getCategoryMinPosition(index);
+                }
 
-            return this.viewportHeight;
+                if (index === this.selected) {
+                    return this.CART_HEIGHT;
+                }
+
+                return this.viewportHeight;
+            });
+        },
+
+        getCategoryMinPosition(index) {
+            return (
+                this.viewportHeight -
+                CATEGORY_HEIGHT * this.categories.length +
+                CATEGORY_HEIGHT * index
+            );
         },
 
         toggleCartAnimation() {
