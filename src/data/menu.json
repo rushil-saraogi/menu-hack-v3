@@ -168,7 +168,7 @@
     "data": [
      {
       "site_category_id": 20,
-      "name": "Packed Banchan (Korean Side Dishes) 12oz",
+      "name": "Korean Side Dishes",
       "ancestor_site_category_ids": []
      }
     ]
@@ -371,7 +371,7 @@
     "data": [
      {
       "site_category_id": 20,
-      "name": "Packed Banchan (Korean Side Dishes) 12oz",
+      "name": "Korean Side Dishes",
       "ancestor_site_category_ids": []
      }
     ]
@@ -574,7 +574,7 @@
     "data": [
      {
       "site_category_id": 20,
-      "name": "Packed Banchan (Korean Side Dishes) 12oz",
+      "name": "Korean Side Dishes",
       "ancestor_site_category_ids": []
      }
     ]
@@ -750,7 +750,7 @@
     "data": [
      {
       "site_category_id": 20,
-      "name": "Packed Banchan (Korean Side Dishes) 12oz",
+      "name": "Korean Side Dishes",
       "ancestor_site_category_ids": []
      }
     ]
@@ -926,7 +926,7 @@
     "data": [
      {
       "site_category_id": 20,
-      "name": "Packed Banchan (Korean Side Dishes) 12oz",
+      "name": "Korean Side Dishes",
       "ancestor_site_category_ids": []
      }
     ]
@@ -1129,7 +1129,7 @@
     "data": [
      {
       "site_category_id": 20,
-      "name": "Packed Banchan (Korean Side Dishes) 12oz",
+      "name": "Korean Side Dishes",
       "ancestor_site_category_ids": []
      }
     ]
@@ -1332,7 +1332,7 @@
     "data": [
      {
       "site_category_id": 20,
-      "name": "Packed Banchan (Korean Side Dishes) 12oz",
+      "name": "Korean Side Dishes",
       "ancestor_site_category_ids": []
      }
     ]
@@ -2618,7 +2618,7 @@
    "visibility_tl": "Visible",
    "visibility_locked": false,
    "name": "Japchae",
-   "short_description": "Glass noodle made of sweet potato and our special sauce. 2-3 servings. <br />Vegan. ",
+   "short_description": "Glass noodle made of sweet potato and our special sauce. 2-3 servings. Vegan. ",
    "variation_type": "3",
    "product_type": "food",
    "product_type_details": {
@@ -2902,7 +2902,7 @@
    "visibility_tl": "Visible",
    "visibility_locked": false,
    "name": "Spicy Pork Belly",
-   "short_description": "Slightly Spicy. Pork belly cooked with our special gochujang sauce. <br />2-3 servings. ",
+   "short_description": "Slightly Spicy. Pork belly cooked with our special gochujang sauce. 2-3 servings. ",
    "variation_type": "3",
    "product_type": "food",
    "product_type_details": [],
@@ -3188,7 +3188,7 @@
    "visibility_tl": "Visible",
    "visibility_locked": false,
    "name": "Savory Chicken",
-   "short_description": "Soft and juicy chicken cooked in savory sauce (slightly sweet).<br />Gluten Free. Nut Free",
+   "short_description": "Soft and juicy chicken cooked in savory sauce (slightly sweet). Gluten Free. Nut Free",
    "variation_type": "3",
    "product_type": "food",
    "product_type_details": {
@@ -3774,7 +3774,7 @@
    "visibility_tl": "Visible",
    "visibility_locked": false,
    "name": "Pineapple Teriyaki",
-   "short_description": "Sweet and savory homemade teriyaki sauce. <br />Vegan, 4oz",
+   "short_description": "Sweet and savory homemade teriyaki sauce. Vegan, 4oz",
    "variation_type": "3",
    "product_type": "food",
    "product_type_details": {
@@ -3917,7 +3917,7 @@
    "visibility_tl": "Visible",
    "visibility_locked": false,
    "name": "Magic Aioli",
-   "short_description": "Perfect combination of gochujang and mayo.<br />Vegetarian. ",
+   "short_description": "Perfect combination of gochujang and mayo.Vegetarian. ",
    "variation_type": "3",
    "product_type": "food",
    "product_type_details": [],
@@ -4058,7 +4058,7 @@
    "visibility_tl": "Visible",
    "visibility_locked": false,
    "name": "Ssamjang",
-   "short_description": "Thick and savory soy bean paste sauce. Vegan. <br />4oz",
+   "short_description": "Thick and savory soy bean paste sauce. Vegan. 4oz",
    "variation_type": "3",
    "product_type": "food",
    "product_type_details": {
@@ -4391,7 +4391,7 @@
     "data": [
      {
       "site_category_id": 20,
-      "name": "Packed Banchan (Korean Side Dishes) 12oz",
+      "name": "Korean Side Dishes",
       "ancestor_site_category_ids": []
      }
     ]
@@ -5841,7 +5841,7 @@
    "visibility_tl": "Visible",
    "visibility_locked": false,
    "name": "Beef Bulgogi",
-   "short_description": "Crowd's favorite. Sweet and savory thinly sliced beef.<br />Nut free. <br />2-3 serving.",
+   "short_description": "Crowd's favorite. Sweet and savory thinly sliced beef.Nut free. 2-3 serving.",
    "variation_type": "3",
    "product_type": "food",
    "product_type_details": {

@@ -9,7 +9,7 @@
             }"
             ref="cart"
             :style="{
-                transition: enableCartTransitions ? '0.6s ease 0s' : '',
+                transition: enableCartTransitions ? '0.3s ease 0s' : '',
                 transitionProperty: 'top, border-radius',
                 top: `${cartPosition}px`,
             }"
@@ -101,7 +101,7 @@
                 :class="{
                     [backgroundClasses[index]]: true,
                     'rounded-t-2xl pt-0': index !== selected,
-					'pt-4': index === selected,
+					'pt-4 pb-16': index === selected,
                 }"
                 :style="{
                     minHeight: `${viewportHeight}px`,
@@ -128,7 +128,7 @@
                         />
                     </Transition>
                     <div
-                        class="text-md p-4 font-semibold poppins"
+                        class="text-md p-4 font-semibold poppins noselect"
                         @touchstart="(e) => handleCategoryTouchStart(e, index)"
                         @touchmove="handleCategoryTouchMove"
 						@touchend="handleCategoryTouchEnd"
@@ -137,7 +137,7 @@
                     </div>
                 </div>
 
-                <div class="overflow-scroll">
+                <div class="overflow-scroll grid gap-4 px-4 pb-4 pt-1">
                     <MenuItem
                         v-for="item in getItems(category.site_category_id)"
                         :key="item.id"
