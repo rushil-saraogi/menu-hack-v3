@@ -1,12 +1,15 @@
 <template>
-    <div class="text-center flex flex-col relative">
+    <div
+        class="text-center flex flex-col relative"
+        :style="{
+            height: this.viewportHeight,
+            WebkitOverflowScrolling: 'touch',
+            overflowY: 'auto',
+        }"
+    >
         <!-- Cart -->
         <div
             class="px-4 py-3 border border-zinc-300 fixed bg-white left-0 w-full z-20"
-            :class="{
-                'rounded-b-2xl': selected === NO_SELECTION,
-                'rounded-none': selected !== NO_SELECTION,
-            }"
             ref="cart"
             :style="{
                 transition: enableCartTransitions ? '0.3s ease 0s' : '',
@@ -24,19 +27,19 @@
                     leave-to-class="transform translate-x-full opacity-0"
                 >
                     <CartItem
-                        v-for="(item, index) in cart"
-                        :key="index"
+                        v-for="item in cart"
+                        :key="item.id"
                         :item="item"
-                        @click:delete="deleteItemFromCart(index)"
+                        @click:delete="deleteItemFromCart(item)"
                     />
                 </TransitionGroup>
             </div>
 
             <div class="mt-3" v-show="!!cart.length">
-                <div class="flex justify-between font-semibold">
+                <!-- <div class="flex justify-between font-semibold">
                     <div>Total</div>
                     <div>${{ cartTotal }}</div>
-                </div>
+                </div> -->
 
                 <button
                     v-show="!!cart.length"
@@ -47,10 +50,10 @@
             </div>
 
             <div
-				@touchstart="handleCartTouchStart"
-				@touchmove="handleCartTouchMove"
-				@touchend="handleCartTouchEnd"
-			>
+                @touchstart="handleCartTouchStart"
+                @touchmove="handleCartTouchMove"
+                @touchend="handleCartTouchEnd"
+            >
                 <div class="flex justify-between items-center">
                     <ShoppingCartIcon class="h-5 w-5 text-zinc-600" />
                     <div
@@ -100,16 +103,21 @@
                 class="fixed left-0 w-full flex flex-col"
                 :class="{
                     [backgroundClasses[index]]: true,
-                    'rounded-t-2xl pt-0': index !== selected,
-					'pt-4 pb-16': index === selected,
+                    'pt-0': index !== selected,
+                    'pt-4 pb-16': index === selected,
                 }"
                 :style="{
                     minHeight: `${viewportHeight}px`,
                     top: `${categoryTopPositions[index]}px`,
                     bottom: '0px',
-                    transition: enableCategoryTransitions ? 'top 0.4s ease 0s' : '',
+                    transition: enableCategoryTransitions
+                        ? 'top 0.3s ease 0s'
+                        : '',
                     transitionProperty: 'top, border-radius',
                 }"
+                @touchstart="(e) => handleCategoryTouchStart(e, index)"
+                @touchmove="handleCategoryTouchMove"
+                @touchend="handleCategoryTouchEnd"
             >
                 <div>
                     <Transition
@@ -120,29 +128,31 @@
                         leave-from-class="opacity-100"
                         leave-to-class="transform opacity-0"
                     >
-                        <DragIcon
-                            :show="index === selected"
-							@touchstart="(e) => handleCategoryTouchStart(e, index)"
-							@touchmove="handleCategoryTouchMove"
-							@touchend="handleCategoryTouchEnd"
-                        />
+                        <DragIcon :show="index === selected" />
                     </Transition>
-                    <div
-                        class="text-md p-4 font-semibold poppins noselect"
-                        @touchstart="(e) => handleCategoryTouchStart(e, index)"
-                        @touchmove="handleCategoryTouchMove"
-						@touchend="handleCategoryTouchEnd"
-                    >
+                    <div class="text-md p-4 font-semibold poppins noselect">
                         {{ category.name }}
                     </div>
                 </div>
 
-                <div class="overflow-scroll grid gap-4 px-4 pb-4 pt-1">
+                <div
+                    class="grid gap-4 px-4 pb-4 pt-1"
+					:class="{
+						'overflow-scroll': this.categoryTopPositions[index] === CART_HEIGHT,
+						'overflow-hidden': this.categoryTopPositions[index] !== CART_HEIGHT,
+					}"
+                    ref="menus"
+                    @touchstart="handleMenuTouchStart"
+                    @touchmove="(e) => handleMenuTouchMove(e, index)"
+                    @touchend="(e) => handleMenuTouchEnd(e, index)"
+                >
                     <MenuItem
                         v-for="item in getItems(category.site_category_id)"
                         :key="item.id"
                         :item="item"
+                        :count="getItemCount(item.id)"
                         @click:addToCart="addToCart(item)"
+						@click:deleteItemFromCart="deleteItemFromCart(item)"
                     />
                 </div>
             </div>
@@ -197,13 +207,17 @@ export default {
             categoryTopPositions: [],
             cartAnimationVisible: false,
             animationInterval: null,
-			enableCategoryTransitions: true,
-			enableCartTransitions: true,
+            enableCategoryTransitions: true,
+            enableCartTransitions: true,
             categoryTouchSelected: NO_SELECTION,
             categoryTouchStart: 0,
+            categoryTouchDragPrevious: 0,
             categoryTouchDrag: 0,
             cartTouchStart: 0,
             cartTouchDrag: 0,
+            menuTouchDragPrevious: 0,
+            menuTouchDrag: 0,
+            menuTouchStart: 0,
         };
     },
 
@@ -242,37 +256,52 @@ export default {
             this.calcCategoryTopPositions();
         },
 
-        categoryTouchDrag(newVal) {
+        categoryTouchDrag(dragValue) {
             this.categoryTopPositions = this.categoryTopPositions.map(
                 (position, index) => {
                     if (index === this.categoryTouchSelected) {
-						if (newVal < this.CART_HEIGHT) {
-							return this.CART_HEIGHT;
-						}
+                        const newPosition =
+                            position -
+                            (this.categoryTouchDragPrevious - dragValue);
+                        // Max height
+                        if (
+                            newPosition < this.CART_HEIGHT ||
+                            dragValue < this.cartHeight
+                        ) {
+                            return this.CART_HEIGHT;
+                        }
 
-						if (newVal > this.getCategoryMinPosition(index)) {
-							return this.getCategoryMinPosition(index);
-						}
+                        // Min height
+                        if (
+                            newPosition > this.getCategoryMinPosition(index) ||
+                            dragValue > this.getCategoryMinPosition()
+                        ) {
+                            return this.getCategoryMinPosition(index);
+                        }
 
-						return newVal;
-					}
+                        if (this.$refs.menus[index].scrollTop !== 0) {
+                            return position;
+                        }
 
-					return position;
+                        return newPosition;
+                    }
+
+                    return position;
                 }
             );
         },
 
-		cartTouchDrag(newVal) {
-			const cartHeight = this.$refs.cart.offsetHeight;
-			const relativePosition = newVal - cartHeight;
+        cartTouchDrag(newVal) {
+            const cartHeight = this.$refs.cart.offsetHeight;
+            const relativePosition = newVal - cartHeight;
 
-			if (relativePosition > 0) {
-				this.cartPosition = 0;
-				return;
-			}
+            if (relativePosition > 0) {
+                this.cartPosition = 0;
+                return;
+            }
 
-			this.cartPosition = relativePosition;
-		}
+            this.cartPosition = relativePosition;
+        },
     },
 
     methods: {
@@ -306,7 +335,6 @@ export default {
         },
 
         handleCategoryClick(index) {
-			// debugger; //eslint-disable-line
             if (this.selected === index) {
                 this.selectCategory(NO_SELECTION);
                 return;
@@ -318,8 +346,10 @@ export default {
         handleCategoryTouchStart(evt, index) {
             const firstTouch = getTouches(evt)[0];
             this.categoryTouchStart = firstTouch.clientY;
+            this.categoryTouchDrag = firstTouch.clientY;
+            this.categoryTouchDragPrevious = firstTouch.clientY;
             this.categoryTouchSelected = index;
-			this.enableCategoryTransitions = false;
+            this.enableCategoryTransitions = false;
         },
 
         handleCategoryTouchMove(evt) {
@@ -327,25 +357,33 @@ export default {
                 return;
             }
 
+            this.categoryTouchDragPrevious = this.categoryTouchDrag;
             this.categoryTouchDrag = evt.touches[0].clientY;
         },
 
-		handleCategoryTouchEnd() {
-			this.enableCategoryTransitions = true;
+        handleCategoryTouchEnd() {
+            this.enableCategoryTransitions = true;
 
-			if (this.categoryTouchDrag < this.categoryTouchStart) {
+			// debugger; //eslint-disable-line
+
+			// For taps - 
+			if (Math.abs(this.categoryTouchDrag - this.categoryTouchStart) < 50) {
+				if (this.categoryTopPositions[this.categoryTouchSelected] !== CART_HEIGHT) {
+					this.selected = this.categoryTouchSelected;
+				}
+			} else if (this.categoryTouchDrag < this.categoryTouchStart) {
 				this.selected = this.categoryTouchSelected;
 			} else {
 				this.selected = NO_SELECTION;
 			}
 
-			this.calcCategoryTopPositions();
-		},
+            this.calcCategoryTopPositions();
+        },
 
-		handleCartTouchStart(evt) {
+        handleCartTouchStart(evt) {
             const firstTouch = getTouches(evt)[0];
             this.cartTouchStart = firstTouch.clientY;
-			this.enableCartTransitions = false;
+            this.enableCartTransitions = false;
         },
 
         handleCartTouchMove(evt) {
@@ -356,19 +394,55 @@ export default {
             this.cartTouchDrag = evt.touches[0].clientY;
         },
 
-		handleCartTouchEnd() {
-			// debugger; // eslint-disable-line
-			this.enableCartTransitions = true;
+        handleCartTouchEnd() {
+            // debugger; // eslint-disable-line
+            this.enableCartTransitions = true;
 
-			if (this.cartTouchDrag > this.cartTouchStart) {
-				this.toggleCart(true);
-			} else {
-				this.toggleCart(false);
-			}
-		},
+            if (this.cartTouchDrag > this.cartTouchStart) {
+                this.toggleCart(true);
+            } else {
+                this.toggleCart(false);
+            }
+        },
 
-        deleteItemFromCart(index) {
-            this.cart.splice(index, 1);
+        handleMenuTouchStart(evt) {
+            const firstTouch = getTouches(evt)[0];
+            this.menuTouchDrag = firstTouch.clientY;
+            this.menuTouchDragPrevious = firstTouch.clientY;
+            this.menuTouchDragStart = firstTouch.clientY;
+        },
+
+        handleMenuTouchMove(evt, index) {
+            if (!this.menuTouchDragStart) {
+                return;
+            }
+
+            if (
+                this.menuTouchDragPrevious < this.menuTouchDrag &&
+                this.$refs.menus[index].scrollTop !== 0
+            ) {
+                evt.stopPropagation();
+                return;
+            }
+
+            this.menuTouchDragPrevious = this.menuTouchDrag;
+            this.menuTouchDrag = evt.touches[0].clientY;
+        },
+
+        handleMenuTouchEnd(evt, index) {
+            if (
+                this.menuTouchDragPrevious < this.menuTouchDrag &&
+                this.$refs.menus[index].scrollTop !== 0
+            ) {
+                evt.stopPropagation();
+                return;
+            }
+        },
+
+        deleteItemFromCart(item) {
+			const idx = this.cart.findIndex(cartItem => cartItem.id === item.id)
+            this.cart.splice(idx, 1);
+			this.toggleCartAnimation();
 
             if (this.cart.length === 0) {
                 this.cartVisible = false;
@@ -376,27 +450,22 @@ export default {
         },
 
         calcCartPosition() {
-            if (
-                !this.$refs.cart || // Ref not available yet
-                (!this.cartVisible && !this.cart.length) || // Cart is closed and empty
-                this.cartVisible // Cart is already open
-            ) {
-                this.cartPosition = 0;
-                return;
-            }
+			if (!this.$refs.cart || this.cartVisible || (!this.cartVisible && !this.cart.length)) {
+				this.cartPosition = 0;
+				return;
+			} 
 
-            const cartTotalHeight = this.$refs.cart.offsetHeight;
+			const cartTotalHeight = this.$refs.cart.offsetHeight;
 
-            // When adding items to the cart bring it down 200px
-            if (this.cartAnimationVisible) {
+			if (this.cartAnimationVisible) {
                 this.cartPosition =
                     this.cart.length === 1
                         ? this.cartPosition
-                        : -(cartTotalHeight - CART_HEIGHT - 200);
+                        : -(cartTotalHeight - CART_HEIGHT - 160);
                 return;
             }
 
-            this.cartPosition = -(cartTotalHeight - CART_HEIGHT);
+			this.cartPosition = -(cartTotalHeight - CART_HEIGHT);
             return;
         },
 
@@ -405,7 +474,7 @@ export default {
 
             this.categoryTopPositions = newPositions.map((_, index) => {
                 if (this.selected === NO_SELECTION) {
-					return this.getCategoryMinPosition(index);
+                    return this.getCategoryMinPosition(index);
                 }
 
                 if (index === this.selected) {
@@ -422,6 +491,16 @@ export default {
                 CATEGORY_HEIGHT * this.categories.length +
                 CATEGORY_HEIGHT * index
             );
+        },
+
+        getItemCount(id) {
+            return this.cart.reduce((acc, item) => {
+                if (item.id === id) {
+                    return acc + 1;
+                }
+
+                return acc;
+            }, 0);
         },
 
         toggleCartAnimation() {

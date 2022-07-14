@@ -8,7 +8,7 @@
                         'background-image': `url(${item.thumbnail.data.absolute_url})`,
                     }"
                 ></div>
-                <div class="ml-3 font-semibold">
+                <div class="ml-3 font-semibold text-left">
                     {{ item.name }}
                 </div>
             </div>
