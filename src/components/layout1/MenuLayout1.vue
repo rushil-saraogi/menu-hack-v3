@@ -1,15 +1,22 @@
 <template>
     <div
-        class="text-center flex flex-col relative"
+        class="text-center flex flex-col relative bg-center bg-cover"
         :style="{
+            minHeight: `${
+                this.viewportHeight -
+                this.categories.length * this.CATEGORY_HEIGHT
+            }px`,
             height: this.viewportHeight,
             WebkitOverflowScrolling: 'touch',
             overflowY: 'auto',
+            'background-image': `url('https://img1.wsimg.com/isteam/ip/f7589362-e027-48e3-a8d0-71ef41735303/118700621_4765239643500977_1372444355120854957.jpg/:/cr=t:0%25,l:0%25,w:100%25,h:100%25/rs=w:1250,h:1000,cg:true')`,
         }"
     >
+        <!-- Background overlay -->
+        <div class="h-full w-full bg-black/50 absolute z-0"></div>
         <!-- Cart -->
         <div
-            class="px-4 py-3 border border-zinc-300 fixed bg-white left-0 w-full z-20"
+            class="border border-zinc-300 fixed bg-white left-0 w-full z-50"
             ref="cart"
             :style="{
                 transition: enableCartTransitions ? '0.3s ease 0s' : '',
@@ -17,33 +24,39 @@
                 top: `${cartPosition}px`,
             }"
         >
-            <div class="grid gap-4">
-                <TransitionGroup
-                    enter-active-class="duration-500 ease-out delay-200"
-                    enter-from-class="transform translate-x-full opacity-0"
-                    enter-to-class="translate-x-0 opacity-100"
-                    leave-active-class="duration-300 ease-in"
-                    leave-from-class="translate-x-0 opacity-100"
-                    leave-to-class="transform translate-x-full opacity-0"
-                >
-                    <CartItem
-                        v-for="item in cart"
-                        :key="item.id"
-                        :item="item"
-                        @click:delete="deleteItemFromCart(item)"
-                    />
-                </TransitionGroup>
+            <div class="px-6 py-6 flex flex-col justify-center align-center" v-if="cart.length === 0">
+                <img
+                    class="opacity-25 h-20 w-20 m-auto"
+                    src="../../assets/drooling.png"
+                />
+                <div class="mt-2 text-gray-400 text-md font-semibold">
+                    Looks like your cart is empty
+                </div>
             </div>
-
-            <div class="mt-3" v-show="!!cart.length">
-                <!-- <div class="flex justify-between font-semibold">
-                    <div>Total</div>
-                    <div>${{ cartTotal }}</div>
-                </div> -->
+            <div class="p-3" v-else>
+                <div class="grid gap-4">
+                    <TransitionGroup
+                        enter-active-class="duration-500 ease-out delay-200"
+                        enter-from-class="transform translate-x-full opacity-0"
+                        enter-to-class="translate-x-0 opacity-100"
+                        leave-active-class="duration-300 ease-in"
+                        leave-from-class="translate-x-0 opacity-100"
+                        leave-to-class="transform translate-x-full opacity-0"
+                    >
+                        <CartItem
+                            v-for="item in cart"
+                            :key="item.id"
+                            :item="item"
+                            @click:delete="deleteItemFromCart(item)"
+                        />
+                    </TransitionGroup>
+                </div>
 
                 <button
-                    v-show="!!cart.length"
-                    class="p-3 flex items-center justify-center bg-orange-500 rounded-lg text-white mb-5 mt-3 font-semibold w-full disabled:bg-zinc-400"
+                    class="mt-3 p-3 flex items-center justify-center rounded-lg text-white mt-3 font-semibold w-full disabled:bg-zinc-400"
+                    :style="{
+                        backgroundColor: '#f05c47',
+                    }"
                 >
                     Checkout
                 </button>
@@ -53,6 +66,7 @@
                 @touchstart="handleCartTouchStart"
                 @touchmove="handleCartTouchMove"
                 @touchend="handleCartTouchEnd"
+                class="border border-gray-200 px-4 py-3"
             >
                 <div class="flex justify-between items-center">
                     <ShoppingCartIcon class="h-5 w-5 text-zinc-600" />
@@ -66,7 +80,7 @@
                     </div>
                 </div>
 
-                <DragIcon :show="cart.length > 0" />
+                <DragIcon />
             </div>
         </div>
 
@@ -80,29 +94,38 @@
             leave-to-class="transform opacity-0"
         >
             <div
-                class="h-full w-full fixed bg-black/60 z-10"
+                class="h-full w-full fixed bg-black/60 z-30"
                 v-show="!!cartVisible"
                 @click="toggleCart(false)"
             />
         </Transition>
 
         <!-- Logo -->
-        <div class="h-80 mt-20 flex justify-center items-center">
-            <img
-                class="logo m-auto"
-                src="https://matko-103991.square.site/uploads/b/019794f0-8fba-11ea-9b73-cbe6ae53dda4/95e10de0-946a-11ea-a3e8-398c70ef0241.jpg"
-            />
+        <div class="h-80 mt-24 flex flex-col justify-center items-center z-10">
+            <div
+                class="p-3 bg-white rounded-full h-44 w-44 flex items-center justify-center shadow-lg"
+            >
+                <img
+                    class="logo m-auto"
+                    src="https://matko-103991.square.site/uploads/b/019794f0-8fba-11ea-9b73-cbe6ae53dda4/95e10de0-946a-11ea-a3e8-398c70ef0241.jpg"
+                />
+            </div>
+            <div
+                class="mt-5 text-white text-xl font-semibold"
+                :style="{ maxWidth: '250px' }"
+            >
+                Homestyle Korean bowl, made with love.
+            </div>
         </div>
 
         <!-- Categories -->
-        <div>
+        <div ref="categoriesContainer">
             <div
                 v-for="(category, index) in categories"
                 ref="categories"
                 :key="category.id"
-                class="fixed left-0 w-full flex flex-col"
+                class="fixed left-0 w-full flex flex-col z-20"
                 :class="{
-                    [backgroundClasses[index]]: true,
                     'pt-0': index !== selected,
                     'pt-4 pb-16': index === selected,
                 }"
@@ -114,6 +137,7 @@
                         ? 'top 0.3s ease 0s'
                         : '',
                     transitionProperty: 'top, border-radius',
+                    backgroundColor: bgColors[index],
                 }"
                 @touchstart="(e) => handleCategoryTouchStart(e, index)"
                 @touchmove="handleCategoryTouchMove"
@@ -137,10 +161,12 @@
 
                 <div
                     class="grid gap-4 px-4 pb-4 pt-1"
-					:class="{
-						'overflow-scroll': this.categoryTopPositions[index] === CART_HEIGHT,
-						'overflow-hidden': this.categoryTopPositions[index] !== CART_HEIGHT,
-					}"
+                    :class="{
+                        'overflow-scroll':
+                            this.categoryTopPositions[index] === CART_HEIGHT,
+                        'overflow-hidden':
+                            this.categoryTopPositions[index] !== CART_HEIGHT,
+                    }"
                     ref="menus"
                     @touchstart="handleMenuTouchStart"
                     @touchmove="(e) => handleMenuTouchMove(e, index)"
@@ -152,7 +178,7 @@
                         :item="item"
                         :count="getItemCount(item.id)"
                         @click:addToCart="addToCart(item)"
-						@click:deleteItemFromCart="deleteItemFromCart(item)"
+                        @click:deleteItemFromCart="deleteItemFromCart(item)"
                     />
                 </div>
             </div>
@@ -172,16 +198,10 @@ import DragIcon from "./DragIcon.vue";
 
 const NO_SELECTION = 99999;
 const CATEGORY_HEIGHT = 56;
-const CART_HEIGHT = 60;
+const CART_HEIGHT = 58;
+const EMPTY_CART_HEIGHT = 160;
 
-const backgroundClasses = [
-    "bg-orange-100",
-    "bg-orange-200",
-    "bg-orange-300",
-    "bg-orange-400",
-    "bg-orange-500",
-    "bg-orange-600",
-];
+const bgColors = ["#ffeeec", "#ffcec9", "#fda69d", "#fe7f72"];
 
 export default {
     name: "MenuLayout1",
@@ -197,10 +217,10 @@ export default {
                 return !!items.length;
             }),
             menu,
-            backgroundClasses,
             selected: NO_SELECTION,
             NO_SELECTION,
             viewportHeight: window.innerHeight,
+            bgColors,
             cartVisible: false,
             cart: [],
             cartPosition: 0,
@@ -313,10 +333,6 @@ export default {
         },
 
         toggleCart(show = null) {
-            if (this.cart.length === 0) {
-                return;
-            }
-
             this.cartVisible = show || !this.cartVisible;
             this.calcCartPosition();
         },
@@ -364,18 +380,23 @@ export default {
         handleCategoryTouchEnd() {
             this.enableCategoryTransitions = true;
 
-			// debugger; //eslint-disable-line
+            // debugger; //eslint-disable-line
 
-			// For taps - 
-			if (Math.abs(this.categoryTouchDrag - this.categoryTouchStart) < 50) {
-				if (this.categoryTopPositions[this.categoryTouchSelected] !== CART_HEIGHT) {
-					this.selected = this.categoryTouchSelected;
-				}
-			} else if (this.categoryTouchDrag < this.categoryTouchStart) {
-				this.selected = this.categoryTouchSelected;
-			} else {
-				this.selected = NO_SELECTION;
-			}
+            // For taps -
+            if (
+                Math.abs(this.categoryTouchDrag - this.categoryTouchStart) < 50
+            ) {
+                if (
+                    this.categoryTopPositions[this.categoryTouchSelected] !==
+                    CART_HEIGHT
+                ) {
+                    this.selected = this.categoryTouchSelected;
+                }
+            } else if (this.categoryTouchDrag < this.categoryTouchStart) {
+                this.selected = this.categoryTouchSelected;
+            } else {
+                this.selected = NO_SELECTION;
+            }
 
             this.calcCategoryTopPositions();
         },
@@ -395,7 +416,6 @@ export default {
         },
 
         handleCartTouchEnd() {
-            // debugger; // eslint-disable-line
             this.enableCartTransitions = true;
 
             if (this.cartTouchDrag > this.cartTouchStart) {
@@ -440,9 +460,11 @@ export default {
         },
 
         deleteItemFromCart(item) {
-			const idx = this.cart.findIndex(cartItem => cartItem.id === item.id)
+            const idx = this.cart.findIndex(
+                (cartItem) => cartItem.id === item.id
+            );
             this.cart.splice(idx, 1);
-			this.toggleCartAnimation();
+            this.toggleCartAnimation();
 
             if (this.cart.length === 0) {
                 this.cartVisible = false;
@@ -450,22 +472,29 @@ export default {
         },
 
         calcCartPosition() {
-			if (!this.$refs.cart || this.cartVisible || (!this.cartVisible && !this.cart.length)) {
-				this.cartPosition = 0;
-				return;
-			} 
-
-			const cartTotalHeight = this.$refs.cart.offsetHeight;
-
-			if (this.cartAnimationVisible) {
-                this.cartPosition =
-                    this.cart.length === 1
-                        ? this.cartPosition
-                        : -(cartTotalHeight - CART_HEIGHT - 160);
+            debugger; //eslint-disable-line
+            if (
+                !this.$refs.cart ||
+                this.cartVisible ||
+                !this.cart.length && this.cartVisible
+            ) {
+                this.cartPosition = 0;
                 return;
             }
 
-			this.cartPosition = -(cartTotalHeight - CART_HEIGHT);
+            if ((!this.cartVisible && !this.cart.length)) {
+                this.cartPosition = -EMPTY_CART_HEIGHT;
+                return;
+            }
+
+            const cartTotalHeight = this.$refs.cart.offsetHeight;
+
+            if (this.cartAnimationVisible) {
+                this.cartPosition = -(cartTotalHeight - CART_HEIGHT - 157);
+                return;
+            }
+
+            this.cartPosition = -(cartTotalHeight - CART_HEIGHT);
             return;
         },
 
@@ -517,6 +546,6 @@ export default {
 
 <style scoped>
 .logo {
-    height: 150px;
+    height: 120px;
 }
 </style>

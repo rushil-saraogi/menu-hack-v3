@@ -56,7 +56,10 @@
                         v-for="(pref, index) in item.product_type_details
                             .dietary_preferences"
                         :key="index"
-                        class="text-xs px-2 py-1 bg-green-500/80 font-semibold rounded-3xl text-white"
+                        class="text-xs px-2 py-1 font-semibold rounded-3xl text-white"
+                        :style="{
+                            backgroundColor: 'rgba(92, 137, 24, 0.8)',
+                        }"
                     >
                         {{ pref }}
                     </div>

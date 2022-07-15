@@ -41,7 +41,7 @@ body {
 
 @keyframes jello {
  10% {
-  background-color: rgb(252 211 77);
+  background-color: #b7cc98;
  }
 }
 
